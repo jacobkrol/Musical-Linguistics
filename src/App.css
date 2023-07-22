@@ -1,0 +1,190 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  width: clamp(350px, 75%, 750px);
+}
+
+textarea {
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  display: block;
+  margin: 1rem auto;
+  background-color: hsl(0, 0%, 24%);
+  color: inherit;
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="button"] {
+  padding: 0.25rem 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: hsl(210, 14%, 83%);
+  color: hsl(0, 0%, 14%);
+}
+
+#convert-options {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+  column-gap: 2rem;
+  row-gap: 1rem;
+  margin: 1rem auto;
+  flex-wrap: wrap;
+}
+
+.convert-option {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.convert-option.checkbox {
+  flex-direction: row;
+  align-items: center;
+  margin: auto 0;
+  gap: 0.5rem;
+}
+
+#convert-options label,
+#convert-options select,
+#convert-options input[type="number"] {
+  font-size: 1rem;
+  font-family: 1rem;
+}
+
+#convert-options select,
+#convert-options input[type="number"] {
+  padding: 0.25rem 0.75rem;
+  border-radius: 5px;
+  background-color: hsl(0, 0%, 24%);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.iconButton {
+  height: 2rem;
+  filter: invert(100%) sepia(73%) saturate(12%) hue-rotate(152deg)
+    brightness(114%) contrast(88%);
+  cursor: pointer;
+}
+
+.hidden {
+  max-height: 0;
+}
+
+#text {
+  margin: 1rem;
+}
+
+#text span {
+  font-family: inherit;
+  font-size: inherit;
+  color: white;
+  transition: color 250ms linear;
+}
+
+#text span.filled {
+  color: darkslategray;
+}
+
+#track {
+  display: flex;
+  align-items: center;
+  background-color: darkslategray;
+  border-radius: 35px;
+  width: clamp(300px, 85%, 600px);
+  height: 70px;
+  margin: 1rem auto;
+  padding: 0 1rem;
+  gap: 1.5rem;
+  position: relative;
+}
+
+#track.loading {
+  opacity: 0.4;
+}
+
+#loading {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 35px;
+  background-color: #88888888;
+  z-index: 2;
+}
+
+#loading.hidden {
+  display: none;
+}
+
+.loadingDot {
+  height: 1rem;
+  animation: bounce 600ms ease 0ms infinite alternate;
+}
+
+.loadingDot:nth-of-type(2) {
+  animation-delay: 200ms;
+}
+
+.loadingDot:nth-of-type(3) {
+  animation-delay: 400ms;
+}
+
+@keyframes bounce {
+  0% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(-10px);
+  }
+}
+
+#playpause {
+  border-radius: 50%;
+}
+
+.iconButton.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#bar {
+  flex-grow: 1;
+  height: 4px;
+  background-color: gray;
+  position: relative;
+  border-radius: 2px;
+}
+
+#dot {
+  position: absolute;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  top: -4px;
+  /* cursor: grab; */
+}
+
+#dot.dragging {
+  cursor: grabbing;
+}
+
+footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
