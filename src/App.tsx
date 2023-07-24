@@ -2,11 +2,28 @@ import "./App.css";
 import MidiWriter, { Duration, Pitch } from "midi-writer-js";
 import MidiPlayer, { Event } from "midi-player-js";
 import { Soundfont } from "smplr";
+import { Factory, EasyScore, System } from "vexflow";
 import { useEffect, useRef, useState } from "react";
 import Play from "./assets/play.svg";
 import Pause from "./assets/pause.svg";
 import Stop from "./assets/stop.svg";
 import Circle from "./assets/circle.svg";
+
+const groupArrayByN: (arr: string[], n: number, pad: string) => string[][] = (
+  arr,
+  n,
+  pad
+) => {
+  let result = [];
+  for (let i = 0; i < arr.length; i += n) {
+    let group = arr.slice(i, i + n);
+    while (group.length < n) {
+      group.push(pad);
+    }
+    result.push(group);
+  }
+  return result;
+};
 
 function App() {
   const [dataUri, setDataUri] = useState("");
@@ -31,9 +48,24 @@ function App() {
       note: evt.noteName ?? "C1",
       duration: 60 / getBpm(),
     });
+
+    // highlight current letter
     document
       .querySelector("#text span:not(.filled):not(.space)")
       ?.classList.add("filled");
+
+    // highlight current note
+    const trebleNote = document.querySelector(".vf-stavenote:not(.filled)");
+    trebleNote?.classList.add("filled");
+    const beat = [...trebleNote?.classList]
+      .find((c) => c.startsWith("beat-"))
+      .replace("beat-", "");
+    const bassNote = document.querySelector(
+      `.vf-stavenote:not(.filled).beat-${beat}`
+    );
+    bassNote?.classList.add("filled");
+
+    // move player dot
     if (document.getElementById("dot") && document.getElementById("bar")) {
       const { width } = document.getElementById("bar")!.getBoundingClientRect();
       const newLeft =
@@ -100,13 +132,10 @@ function App() {
       (document.getElementById("octave-select") as HTMLInputElement).value
     );
     const startingOctave = isNaN(providedOctave) ? 3 : providedOctave;
-    const offsetFromOctave = 2; // due to starting at "C"
 
     // map
     const note = noteRange[value % noteRange.length];
-    const octave =
-      Math.floor((value + offsetFromOctave) / noteRange.length) +
-      startingOctave;
+    const octave = Math.floor(value / noteRange.length) + startingOctave;
 
     // concatenate
     if (value < 0 || value > 25) {
@@ -195,6 +224,9 @@ function App() {
     // load track
     setDataUri(uri);
     player.current.loadDataUri(uri);
+
+    // create score
+    createScore(notes);
   };
 
   const playAudio = () => {
@@ -231,6 +263,9 @@ function App() {
     document
       .querySelectorAll("#text span")
       .forEach((el) => el.classList.remove("filled"));
+    document
+      .querySelectorAll(".vf-stavenote")
+      .forEach((el) => el.classList.remove("filled"));
     setPlayerStatus("stopped");
     document.getElementById("dot")!.style.left = "0px";
   };
@@ -243,6 +278,104 @@ function App() {
 
   const selectInterval: React.ChangeEventHandler<HTMLSelectElement> = (evt) => {
     selectedInterval.current = evt.target.value;
+  };
+
+  const createScore: (notes: string[][]) => void = (notes) => {
+    // reset output window
+    if (!document.getElementById("score")) return;
+    document.getElementById("score")!.innerHTML = "";
+
+    // setup classes
+    const vf = new Factory({
+      renderer: { elementId: "score", width: 1500, height: 250 },
+    });
+
+    let x = 20;
+    let y = 20;
+
+    const appendSystem = (width: number) => {
+      const system = vf.System({ x, y, width, spaceBetweenStaves: 10 });
+      x += width;
+      return system;
+    };
+
+    const score = vf.EasyScore();
+    let system = vf.System();
+
+    const restOnSpaces = (
+      document.getElementById("rest-select") as HTMLInputElement
+    ).checked;
+
+    // add notes
+    const vexNotes = notes.reduce((previous, current, index) => {
+      let next = [...previous, ...current.map((str) => str + "/q")];
+      if (index < notes.length - 1 && restOnSpaces) {
+        next.push("REST"); // treble: B4, bass: D3
+      }
+      return next;
+    }, []);
+    const measures = groupArrayByN(vexNotes, 4, "REST");
+    const order = ["C", "D", "E", "F", "G", "A", "B"];
+    const isTreble = (note: string) =>
+      order.indexOf(note[0]) + Number(note.match(/\d/)?.[0] ?? "0") * 7 > 27; // middle C
+    const trebleRest = "B4/q/r";
+    const bassRest = "D3/q/r";
+    const treble = measures.map((measure) =>
+      measure.map((note) =>
+        isTreble(note) && note !== "REST" ? note : trebleRest
+      )
+    );
+    const bass = measures.map((measure) =>
+      measure.map((note) =>
+        isTreble(note) || note === "REST" ? bassRest : note
+      )
+    );
+    console.log({ vexNotes, measures, treble, bass });
+
+    const measureWidth = 150;
+
+    // first measure
+    system = appendSystem(measureWidth + 60);
+    system
+      .addStave({ voices: [score.voice(score.notes(treble[0].join(", ")))] })
+      .addClef("treble")
+      .addTimeSignature("4/4");
+    system
+      .addStave({
+        voices: [
+          score.voice(score.notes(bass[0].join(", "), { clef: "bass" })),
+        ],
+      })
+      .addClef("bass")
+      .addTimeSignature("4/4");
+    system.addConnector("singleLeft");
+    system.addConnector("singleRight");
+
+    // remaining measures
+    for (let i = 1; i < treble.length; i++) {
+      system = appendSystem(measureWidth);
+      system.addStave({
+        voices: [score.voice(score.notes(treble[i].join(", ")))],
+      });
+      system.addStave({
+        voices: [
+          score.voice(score.notes(bass[i].join(", "), { clef: "bass" })),
+        ],
+      });
+      system.addConnector("singleRight");
+    }
+
+    try {
+      vf.draw();
+    } catch (err) {
+      console.log(err);
+    }
+
+    // label beat number with class
+    const noteElements = document.querySelectorAll(".vf-stavenote");
+    for (let i = 0; i < noteElements.length; i++) {
+      noteElements[i].classList.add(`beat-${i % 4}`);
+    }
   };
 
   useEffect(() => {
@@ -367,6 +500,9 @@ function App() {
           className="iconButton disabled"
           onClick={playerStatus !== "stopped" ? stopAudio : undefined}
         />
+      </div>
+      <div id="score">
+        <p>Click "Convert" to generate your first score</p>
       </div>
       <footer>
         <a href="https://kroljs.com" rel="noopener noreferrer" target="_blank">

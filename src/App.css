@@ -183,6 +183,20 @@ input[type="button"] {
   cursor: grabbing;
 }
 
+#score {
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  box-shadow: #f0f0f0 0px 0px 5px;
+  margin: 2rem;
+  overflow-x: scroll;
+  overflow-y: auto;
+  color: hsl(0, 0%, 14%);
+}
+
+.vf-stavenote.filled {
+  opacity: 0.5;
+}
+
 footer {
   display: flex;
   justify-content: center;
