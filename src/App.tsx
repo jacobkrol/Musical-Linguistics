@@ -2,7 +2,7 @@ import "./App.css";
 import MidiWriter, { Duration, Pitch } from "midi-writer-js";
 import MidiPlayer, { Event } from "midi-player-js";
 import { Soundfont } from "smplr";
-import { Factory, EasyScore, System } from "vexflow";
+import { Factory } from "vexflow";
 import { useEffect, useRef, useState } from "react";
 import Play from "./assets/play.svg";
 import Pause from "./assets/pause.svg";
@@ -56,10 +56,12 @@ function App() {
 
     // highlight current note
     const trebleNote = document.querySelector(".vf-stavenote:not(.filled)");
-    trebleNote?.classList.add("filled");
-    const beat = [...trebleNote?.classList]
-      .find((c) => c.startsWith("beat-"))
-      .replace("beat-", "");
+    trebleNote!.classList.add("filled");
+    /* tslint:disable-next-line */
+    const classes = trebleNote!.classList;
+    const beatClass =
+      [...classes].find((c) => c.startsWith("beat-")) ?? "beat-0";
+    const beat = beatClass.replace("beat-", "");
     const bassNote = document.querySelector(
       `.vf-stavenote:not(.filled).beat-${beat}`
     );
