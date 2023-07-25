@@ -1,5 +1,5 @@
 import "./App.css";
-import MidiWriter, { Duration, Pitch } from "midi-writer-js";
+import MidiWriter, { Pitch } from "midi-writer-js";
 import MidiPlayer, { Event } from "midi-player-js";
 import { Soundfont } from "smplr";
 import { Factory } from "vexflow";
@@ -44,6 +44,20 @@ function App() {
       return;
     }
 
+    // highlight current note
+    const trebleNote = document.querySelector(".vf-stavenote:not(.filled)");
+    trebleNote!.classList.add("filled");
+    const classes = trebleNote!.classList;
+    const beatClass =
+      [...classes].find((c) => c.startsWith("beat-")) ?? "beat-0";
+    const beat = beatClass.replace("beat-", "");
+    const bassNote = document.querySelector(
+      `.vf-stavenote:not(.filled).beat-${beat}`
+    );
+    bassNote?.classList.add("filled");
+
+    if (!evt.velocity) return;
+
     instrument.current?.start({
       note: evt.noteName ?? "C1",
       duration: 60 / getBpm(),
@@ -53,19 +67,6 @@ function App() {
     document
       .querySelector("#text span:not(.filled):not(.space)")
       ?.classList.add("filled");
-
-    // highlight current note
-    const trebleNote = document.querySelector(".vf-stavenote:not(.filled)");
-    trebleNote!.classList.add("filled");
-    /* tslint:disable-next-line */
-    const classes = trebleNote!.classList;
-    const beatClass =
-      [...classes].find((c) => c.startsWith("beat-")) ?? "beat-0";
-    const beat = beatClass.replace("beat-", "");
-    const bassNote = document.querySelector(
-      `.vf-stavenote:not(.filled).beat-${beat}`
-    );
-    bassNote?.classList.add("filled");
 
     // move player dot
     if (document.getElementById("dot") && document.getElementById("bar")) {
@@ -161,22 +162,30 @@ function App() {
       Number(
         (document.getElementById("tempo-select") as HTMLInputElement).value
       ) ?? 200;
-    const wait = (
-      (document.getElementById("rest-select") as HTMLInputElement).checked
-        ? "4"
-        : "0"
-    ) as Duration;
+    const wait = (document.getElementById("rest-select") as HTMLInputElement)
+      .checked;
     track.setTempo(bpm, 0);
     track.addEvent(
-      notes.map((word) => {
-        const pitch = word as Pitch[];
-        return new MidiWriter.NoteEvent({
-          pitch,
-          duration: "4",
-          wait,
-          sequential: true,
-        });
-      }),
+      notes
+        .map((word, index) => {
+          const pitch = word as Pitch[];
+          const noteEvent = new MidiWriter.NoteEvent({
+            pitch,
+            duration: "4",
+            sequential: true,
+          });
+          return wait && index !== notes.length - 1
+            ? [
+                noteEvent,
+                new MidiWriter.NoteEvent({
+                  pitch: ["C0"],
+                  duration: "4",
+                  velocity: 0,
+                }),
+              ]
+            : [noteEvent];
+        })
+        .flat(),
       () => ({ sequential: true })
     );
     const write = new MidiWriter.Writer(track);
